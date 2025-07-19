@@ -14,9 +14,7 @@ echo "👤 User: $N8N_USER"
 echo "📍 Lokasi n8n: $N8N_EXEC"
 
 # === Buat systemd service ===
-SERVICE_FILE="/etc/systemd/system/n8n.service"
-
-sudo bash -c "cat > $SERVICE_FILE" <<EOF
+sudo tee "$SERVICE_FILE" > /dev/null <<EOF
 [Unit]
 Description=n8n automation
 After=network.target
@@ -36,6 +34,7 @@ Restart=on-failure
 [Install]
 WantedBy=multi-user.target
 EOF
+
 
 # === Reload systemd dan aktifkan service ===
 echo "🔄 Mengaktifkan systemd service..."
