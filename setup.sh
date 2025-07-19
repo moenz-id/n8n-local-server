@@ -1,19 +1,19 @@
 #!/bin/bash
 
-# === Konfigurasi manual ===
-N8N_USER=$(whoami)   # Gunakan user aktif saat ini
-N8N_EXEC=$(which n8n)  # Cari lokasi binary n8n
+# === Konfigurasi dasar ===
+N8N_USER=$(whoami)
+N8N_EXEC=$(which n8n)
 
 if [[ -z "$N8N_EXEC" ]]; then
-  echo "❌ n8n tidak ditemukan di PATH. Pastikan sudah diinstall via npm."
+  echo "❌ n8n tidak ditemukan. Pastikan sudah diinstall via npm: npm install -g n8n"
   exit 1
 fi
 
-# === Tampilkan info untuk verifikasi ===
-echo "🧾 Membuat systemd service untuk user: $N8N_USER"
+echo "📡 Menyiapkan n8n agar bisa diakses dari IP lokal (LAN)"
+echo "👤 User: $N8N_USER"
 echo "📍 Lokasi n8n: $N8N_EXEC"
 
-# === Buat systemd unit ===
+# === Buat systemd service ===
 SERVICE_FILE="/etc/systemd/system/n8n.service"
 
 sudo bash -c "cat > $SERVICE_FILE" <<EOF
@@ -26,6 +26,7 @@ Type=simple
 User=$N8N_USER
 Environment=PATH=/usr/bin:/usr/local/bin
 Environment=N8N_PORT=5678
+Environment=N8N_HOST=0.0.0.0
 Environment=N8N_SECURE_COOKIE=false
 Environment=EXECUTIONS_PROCESS=main
 WorkingDirectory=/home/$N8N_USER
@@ -36,13 +37,17 @@ Restart=on-failure
 WantedBy=multi-user.target
 EOF
 
-# === Reload & aktifkan service ===
-echo "🔄 Reloading systemd dan mengaktifkan service..."
+# === Reload systemd dan aktifkan service ===
+echo "🔄 Mengaktifkan systemd service..."
 sudo systemctl daemon-reexec
 sudo systemctl daemon-reload
 sudo systemctl enable n8n
 sudo systemctl restart n8n
 
-# === Cek status ===
-echo "✅ Service n8n aktif!"
-systemctl status n8n --no-pager
+# === Buka firewall jika pakai ufw ===
+if command -v ufw &> /dev/null && sudo ufw status | grep -q "Status: active"; then
+  echo "🔓 Membuka port 5678 di ufw..."
+  sudo ufw allow 5678/tcp
+fi
+
+echo "✅ n8n aktif! Akses via: http://
